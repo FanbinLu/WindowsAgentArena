@@ -90,8 +90,8 @@ def config() -> argparse.Namespace:
     )
     parser.add_argument("--screen_width", type=int, default=1920)
     parser.add_argument("--screen_height", type=int, default=1200)
-    parser.add_argument("--sleep_after_execution", type=float, default=3)
-    parser.add_argument("--max_steps", type=int, default=15)
+    parser.add_argument("--sleep_after_execution", type=float, default=1)
+    parser.add_argument("--max_steps", type=int, default=20)
     parser.add_argument("--a11y_backend", type=str, default="uia") # "uia" or "win32"
 
     # agent config
@@ -102,7 +102,7 @@ def config() -> argparse.Namespace:
 
     # lm config
     parser.add_argument("--model", type=str, default="gpt-4-vision-preview") #gpt-4o-mini or gpt-4-vision-preview or gpt-4o or gpt-4-1106-vision-preview
-    parser.add_argument("--temperature", type=float, default=1.0)
+    parser.add_argument("--temperature", type=float, default=0.6)
     parser.add_argument("--top_p", type=float, default=0.9)
     parser.add_argument("--max_tokens", type=int, default=1500)
     parser.add_argument("--stop_token", type=str, default=None)
@@ -110,6 +110,9 @@ def config() -> argparse.Namespace:
     # example config
     parser.add_argument("--domain", type=str, default="all")
     parser.add_argument("--emulator_ip", type=str, default="20.20.20.21")
+    parser.add_argument("--worker_ip", type=str, default="http://10.1.1.3:8001/v1")
+    parser.add_argument("--grounding_server", type=str, default="http://10.1.1.3:8001/v1")
+    parser.add_argument("--grounding_model", type=str, default="ui-tars")
 
     parser.add_argument("--test_all_meta_path", type=str, default="evaluation_examples_windows/test_all.json") # or test_custom.json for a single task
 
@@ -189,6 +192,34 @@ def test(
     elif cfg_args["agent_name"] == "claude":
         from mm_agents.claude.agent import ClaudeAgent
         agent = ClaudeAgent()
+    elif cfg_args["agent_name"] == "cot":
+        from mm_agents.cot_agent.agent import CoTAgent
+        agent = CoTAgent(
+            server="oai",
+            model=args.model,
+            obs_view='screen',
+            temperature=args.temperature,
+        )
+    elif cfg_args["agent_name"] == "cot_qwen2vl":
+        from mm_agents.cot_agent.qwen2vl_agent import CoTQwen2VLAgent
+        agent = CoTQwen2VLAgent(
+            server=args.worker_ip,
+            model=args.model,
+            grounding_server=args.grounding_server,
+            grounding_model=args.grounding_model,
+            obs_view='screen',
+            temperature=args.temperature,
+        )
+    elif cfg_args["agent_name"] == "ui-tars":
+        from mm_agents.ui_tars.uitars_agent import UITARSAgent
+        agent = UITARSAgent(
+            platform="windows",
+            base_url=args.worker_ip,
+            max_tokens=1000,
+            temperature=args.temperature,
+            observation_type='screenshot',
+            action_space='pyautogui',
+        )
     else:
         raise ValueError(f"Unknown agent name: {cfg_args['agent_name']}")
     
@@ -196,6 +227,7 @@ def test(
         action_space=agent.action_space,
         screen_size=(args.screen_width, args.screen_height),
         headless=args.headless,
+        snapshot_name="/storage",
         require_a11y_tree=args.observation_type in ["a11y_tree", "screenshot_a11y_tree", "som"],
         emulator_ip=args.emulator_ip, #for OS running on docker
         a11y_backend=args.a11y_backend
@@ -405,6 +437,7 @@ if __name__ == '__main__':
             args.trial_id,
             test_all_meta
         )
+        # test_file_list = test_all_meta
     else:
         # if we have more than one worker (Azure runs) then we distribute the tasks equally
         # otherwise they will try to delete each other's partial results in get_unfinished

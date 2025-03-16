@@ -139,7 +139,7 @@ class DesktopEnv(gym.Env):
 
     def _save_state(self):
         # TODO: test this
-        # self.vm_controller.take_snapshot(self.snapshot_name)
+        self.vm_controller.take_snapshot(self.snapshot_name)
         logger.error("Not implemented! Saving state is not supported for remote VMs!")
 
     def _get_screenshot(self):
@@ -298,15 +298,19 @@ class DesktopEnv(gym.Env):
         done = False  # todo: Define episode termination condition for each example
         info = {}
         # handle the special actions
-        if action in ['WAIT', 'FAIL', 'DONE']:
+        if action in ['WAIT', 'FAIL', 'DONE', 'CALL_USER', 'RESET']:
             if action == 'WAIT':
                 time.sleep(pause)
             elif action == 'FAIL':
                 done = True
                 info = {"fail": True}
-            elif action == 'DONE':
+            elif action == 'DONE' or action == 'CALL_USER':
                 done = True
                 info = {"done": True}
+            elif action == 'RESET':
+                self.reset()
+                self.setup_controller.reset_cache_dir(self.cache_dir)
+                self.setup_controller.setup(self.config)
         else:
             if self.action_space == "computer_13":
                 # the set of all possible actions defined in the action representation

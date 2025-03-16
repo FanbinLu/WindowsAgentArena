@@ -24,7 +24,8 @@ class GPT4VisionOAI:
         self.api_key = os.getenv("OPENAI_API_KEY")
         if self.api_key is None:
             print("API key not found in environment variable.")
-        self.client = openai.OpenAI(api_key=self.api_key)  
+        self.base_url = os.getenv("OPENAI_BASE_URL")
+        self.client = openai.OpenAI(api_key=self.api_key, base_url=self.base_url)
   
     def encode_image(self, image: Union[str, Image.Image]) -> str:  
         if isinstance(image, str):  

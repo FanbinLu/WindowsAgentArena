@@ -18,7 +18,7 @@ class TrajectoryRecorder:
         
         for key, value in info_dict.items():
             file_path = None
-            if key in ["accessibility_tree", "user_question", "plan_result"]:
+            if key in ["accessibility_tree", "user_question", "plan_result", "plan_result_full"]:
                 file_path = os.path.join(self.result_dir, file_format.format(
                     key=key, step_idx=step_idx, action_timestamp=action_timestamp, ext="txt"))
                 with open(file_path, "w") as f:

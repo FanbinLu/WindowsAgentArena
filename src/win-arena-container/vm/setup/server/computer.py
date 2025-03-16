@@ -66,6 +66,8 @@ class Mouse:
         self.current_id = id  
         time.sleep(sleep_after_execution)
         
+    def move(self, x, y):
+        self.move_abs(x, y)
     
     def move_abs(self, x, y):  
         # x and y are normalized to the image size. Need to convert to image pixel coordinates and then to screen coordinates
@@ -101,8 +103,11 @@ class Mouse:
             raise ValueError("direction must be 'up' or 'down'")
         time.sleep(sleep_after_execution)
 
-    def drag(self, screen_x, screen_y):
-        pyautogui.dragTo(screen_x, screen_y, button='left')   
+    def drag(self, x, y):
+        x_img = int(x * (self.window_rect[2]-self.window_rect[0]))
+        y_img = int(y * (self.window_rect[3]-self.window_rect[1])) 
+        screen_x, screen_y = screen_utils.image_to_screen_coordinates(x_img, y_img, self.window_rect)
+        pyautogui.dragTo(screen_x, screen_y, button='left', duration=1)   
         time.sleep(sleep_after_execution)
          
 
@@ -114,8 +119,7 @@ class OS:
   
         # Set the window position to the main monitor (0,0) before maximizing  
         win32gui.SetWindowPos(window, 0, 0, 0, 0, 0, win32con.SWP_NOSIZE)  
-  
-        # Maximize the window  
+ # Your Small Change Here        # Maximize the window  
         win32gui.ShowWindow(window, win32con.SW_MAXIMIZE)   
         time.sleep(sleep_after_execution)
         
@@ -174,7 +178,7 @@ class OS:
   
 class Keyboard:  
     def write(self, text):  
-        pyautogui.write(text)  
+        pyautogui.write(text, interval=0.1)  
         time.sleep(sleep_after_execution)
   
     def press(self, key):  
@@ -185,6 +189,19 @@ class Keyboard:
         else:
             pyautogui.press(key)
         time.sleep(sleep_after_execution)
+    
+    def keyDown(self, key):  
+        pyautogui.keyDown(key)  
+        time.sleep(sleep_after_execution)
+
+    def keyUp(self, key):  
+        pyautogui.keyUp(key)  
+        time.sleep(sleep_after_execution)
+    
+    def hotkey(self, *keys):  
+        pyautogui.hotkey(*keys)  
+        time.sleep(sleep_after_execution)
+    
 
 def send_to_clipboard(clip_type, data):
     win32clipboard.OpenClipboard()

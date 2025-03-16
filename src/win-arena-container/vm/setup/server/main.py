@@ -108,6 +108,7 @@ app = Flask(__name__)
 
 pyautogui.PAUSE = 0
 pyautogui.DARWIN_CATCH_UP_TIME = 0
+pyautogui.FAILSAFE = False
 
 logger = app.logger
 computer = Computer(logger)

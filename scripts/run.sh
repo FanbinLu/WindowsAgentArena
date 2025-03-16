@@ -27,8 +27,10 @@ som_origin="oss"
 a11y_backend="uia"
 gpu_enabled=false
 OPENAI_API_KEY=""
+OPENAI_BASE_URL=""
 AZURE_API_KEY=""
 AZURE_ENDPOINT=""
+json_name="evaluation_examples_windows/test_all.json"
 
 # Parse the command line arguments
 while [[ $# -gt 0 ]]; do
@@ -113,6 +115,10 @@ while [[ $# -gt 0 ]]; do
             OPENAI_API_KEY="$2"
             shift 2
             ;;
+        --openai-base-url)
+            OPENAI_BASE_URL="$2"
+            shift 2
+            ;;
         --azure-api-key)
             AZURE_API_KEY="$2"
             shift 2
@@ -123,6 +129,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --mode)
             mode=$2
+            shift 2
+            ;;
+        --json-name)
+            json_name=$2
             shift 2
             ;;
         --help)
@@ -168,7 +178,8 @@ else
 fi
 
 winarena_image_tag="latest" 
-winarena_full_image_name="windowsarena/$winarena_image_name"
+winarena_full_image_name="windowsarena/$winarena_image_name-eval"
+# winarena_full_image_name="windowsarena/$winarena_image_name"
 
 # Check if Docker daemon is running
 if ! docker info >/dev/null 2>&1; then
@@ -288,6 +299,7 @@ invoke_docker_container() {
     # OpenAI API Key priotitized over Azure API Key
     if [ -n "$OPENAI_API_KEY" ]; then
         docker_command+=" -e OPENAI_API_KEY=$OPENAI_API_KEY"
+        docker_command+=" -e OPENAI_BASE_URL=$OPENAI_BASE_URL"
     else
         if [ -n "$AZURE_API_KEY" ]; then
             docker_command+=" -e AZURE_API_KEY=$AZURE_API_KEY"
@@ -302,7 +314,7 @@ invoke_docker_container() {
     docker_command+=" $winarena_full_image_name:$winarena_image_tag"
     
     # Set the entrypoint arguments
-    entrypoint_args=" -c './entry.sh --prepare-image $prepare_image --start-client $start_client --agent $agent --model $model --som-origin $som_origin --a11y-backend $a11y_backend'"
+    entrypoint_args=" -c './entry.sh --prepare-image $prepare_image --start-client $start_client --agent $agent --model $model --som-origin $som_origin --a11y-backend $a11y_backend --json-name $json_name'"
     if [ "$interactive" = true ]; then
         entrypoint_args=""
     fi

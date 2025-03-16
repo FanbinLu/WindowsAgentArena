@@ -7,6 +7,36 @@ import time
 import traceback
 from trajectory_recorder import TrajectoryRecorder
 
+import signal
+
+class TimeoutError(Exception):
+    pass
+
+def timeout_handler(signum, frame):
+    raise TimeoutError("Function execution timed out")
+
+def run_with_timeout(func, timeout, max_retries, *args, **kwargs):
+    retries = 0
+
+    while retries < max_retries:
+        # Set the timeout signal
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(timeout)  # Set alarm for timeout seconds
+
+        try:
+            result = func(*args, **kwargs)
+            signal.alarm(0)  # Cancel alarm if function succeeds
+            return result
+        except TimeoutError:
+            retries += 1
+            print(f"Timeout occurred! Retrying {retries}/{max_retries}...")
+        except Exception as e:
+            signal.alarm(0)  # Cancel alarm in case of other exceptions
+            raise e
+
+    raise RuntimeError(f"Function failed after {max_retries} retries due to timeouts.")
+
+
 logger = logging.getLogger("desktopenv.experiment")
 
 # Open the JSON file
@@ -17,7 +47,9 @@ time_limit = data["time_limit"]
 
 def run_single_example(agent, env, example, max_steps, instruction, args, example_result_dir, scores):
     agent.reset()
-    obs = env.reset(task_config=example)
+    # obs = run_with_timeout(env.reset(task_config=example), timeout=200, max_retries=3) # 200s and retry 3 times
+    obs = run_with_timeout(env.reset, timeout=200, max_retries=3, task_config=example) # 200s and retry 3 times
+
     done = False
     step_idx = 0
 
@@ -55,6 +87,7 @@ def run_single_example(agent, env, example, max_steps, instruction, args, exampl
             elapsed_timestamp = f"{datetime.datetime.now() - start_time}"
             logger.info("Step %d: %s", step_idx + 1, action)
             
+            print('sleep: ', args.sleep_after_execution)
             obs, reward, done, info = env.step(action, args.sleep_after_execution)
 
             logger.info("Reward: %.2f", reward)
@@ -80,7 +113,8 @@ def run_single_example(agent, env, example, max_steps, instruction, args, exampl
         step_idx += 1
     
     logger.info("Running evaluator(s)...")
-    result = env.evaluate()
+    # result = env.evaluate()
+    result = run_with_timeout(env.evaluate, timeout=200, max_retries=3)
     logger.info("Result: %.2f", result)
     scores.append(result)
 

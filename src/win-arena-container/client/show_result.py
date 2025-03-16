@@ -67,11 +67,18 @@ def get_result(target_dir):
     else:
         print("Professional", "Success Rate: No data available")
 
+    print("Web browser", "Success Rate:", sum(domain_result.get("chrome", []) + domain_result.get("msedge", [])) / len(domain_result.get("chrome", []) + domain_result.get("msedge", [])) * 100, "%", len(domain_result.get("chrome", []) + domain_result.get("msedge", [])))
+    print('Windows System', 'Success Rate: ', sum(domain_result.get('file_explorer', []) + domain_result.get('settings', [])) / len(domain_result.get('file_explorer', []) + domain_result.get('settings', [])) * 100, '%', len(domain_result.get('file_explorer', []) + domain_result.get('settings', [])))
+    print('Coding', 'Success Rate: ', sum(domain_result.get('vs_code', [])) / len(domain_result.get('vs_code', [])) * 100, '%', len(domain_result.get('vs_code', [])))
+    print('Media', 'Success Rate: ', sum(domain_result.get('vlc', [])) / len(domain_result.get('vlc', [])) * 100, '%', len(domain_result.get('vlc', [])))
+    print('Windows Utilities', 'Success Rate: ', sum(domain_result.get('windows_calc', []) + domain_result.get('notepad', []) + domain_result.get('clock', []) + domain_result.get('microsoft_paint', [])) / len(domain_result.get('windows_calc', []) + domain_result.get('notepad', []) + domain_result.get('clock', []) + domain_result.get('microsoft_paint', [])) * 100, '%', len(domain_result.get('windows_calc', []) + domain_result.get('notepad', []) + domain_result.get('clock', []) + domain_result.get('microsoft_paint', [])))
+
     with open(os.path.join(target_dir, "all_result.json"), "w") as f:
         json.dump(all_result_for_analysis, f, indent=4)
     with open(os.path.join(target_dir, "missing.json"), "w") as f:
         json.dump(missing_domains, f, indent=4)
 
+    print("Tasks executed:", len(all_result), "Current Success Rate:", sum(all_result) / len(all_result) * 100, "%")
     if not all_result:
         print("New experiment, no result yet.")
         return None
